@@ -1,4 +1,3 @@
-﻿@[TOC](Lab 1)
 # Introduction
 >The purpose of this assignment is to become more familiar with bit-level representations and manipulations.
 You’ll do this by solving a series of programming “puzzles.”
@@ -583,4 +582,4 @@ int tc2sm(int x)
     return ((x ^ m1) | m2) + m3;
 }
 ```
-==Tip: 涉及到正负数的时候，符号位以及算术右移都是常用的处理技巧==
+>Tip: 涉及到正负数的时候，符号位以及算术右移都是常用的处理技巧
