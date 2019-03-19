@@ -1,0 +1,179 @@
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of positive words (>0) contained in src.
+                            | #
+                            | # Include your name and ID here.
+                            | # Name:Liu Yalan
+                            | # ID:517030910228
+                            | #
+                            | # Describe how and why you modified the baseline code.
+                            | #
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x000:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            | # You can modify this portion
+                            | # Loop header
+0x000: 6300                 | 	xorq %rax, %rax		# count = 0;
+0x002: c0f2f9ffffffffffffff | 	iaddq $-7, %rdx		# len <= 7?
+0x00c: 718e01000000000000   | 	jle Rest			# if so, goto Rest:
+                            | 
+0x015:                      | Loop:
+0x015: c0f20700000000000000 | 	iaddq $7, %rdx
+                            | 
+0x01f:                      | P1:
+0x01f: 50870000000000000000 | 	mrmovq (%rdi), %r8
+0x029: 50970800000000000000 | 	mrmovq 0x8(%rdi), %r9
+0x033: 40860000000000000000 | 	rmmovq %r8, (%rsi)
+0x03d: 6288                 | 	andq %r8, %r8
+0x03f: 715200000000000000   | 	jle P2
+0x048: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x052:                      | P2:
+0x052: 50871000000000000000 | 	mrmovq 0x10(%rdi), %r8
+0x05c: 40960800000000000000 | 	rmmovq %r9, 0x8(%rsi)
+0x066: 6299                 | 	andq %r9, %r9
+0x068: 717b00000000000000   | 	jle P3
+0x071: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x07b:                      | P3:
+0x07b: 50971800000000000000 | 	mrmovq 0x18(%rdi), %r9
+0x085: 40861000000000000000 | 	rmmovq %r8, 0x10(%rsi)
+0x08f: 6288                 | 	andq %r8, %r8
+0x091: 71a400000000000000   | 	jle P4
+0x09a: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x0a4:                      | P4:
+0x0a4: 50872000000000000000 | 	mrmovq 0x20(%rdi), %r8
+0x0ae: 40961800000000000000 | 	rmmovq %r9, 0x18(%rsi)
+0x0b8: 6299                 | 	andq %r9, %r9
+0x0ba: 71cd00000000000000   | 	jle P5
+0x0c3: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x0cd:                      | P5:
+0x0cd: 50972800000000000000 | 	mrmovq 0x28(%rdi), %r9
+0x0d7: 40862000000000000000 | 	rmmovq %r8, 0x20(%rsi)
+0x0e1: 6288                 | 	andq %r8, %r8
+0x0e3: 71f600000000000000   | 	jle P6
+0x0ec: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x0f6:                      | P6:
+0x0f6: 50873000000000000000 | 	mrmovq 0x30(%rdi), %r8
+0x100: 40962800000000000000 | 	rmmovq %r9, 0x28(%rsi)
+0x10a: 6299                 | 	andq %r9, %r9
+0x10c: 711f01000000000000   | 	jle P7
+0x115: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x11f:                      | P7:
+0x11f: 50973800000000000000 | 	mrmovq 0x38(%rdi), %r9
+0x129: 40863000000000000000 | 	rmmovq %r8, 0x30(%rsi)
+0x133: 6288                 | 	andq %r8, %r8
+0x135: 714801000000000000   | 	jle P8
+0x13e: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x148:                      | P8:
+0x148: 40963800000000000000 | 	rmmovq %r9, 0x38(%rsi)
+0x152: c0f74000000000000000 | 	iaddq $0x40, %rdi
+0x15c: c0f64000000000000000 | 	iaddq $0x40, %rsi
+0x166: 6299                 | 	andq %r9, %r9
+0x168: 717b01000000000000   | 	jle test
+0x171: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 	
+0x17b:                      | test:
+0x17b: c0f2f1ffffffffffffff | 	iaddq $-15, %rdx
+0x185: 761500000000000000   | 	jg Loop
+                            | 
+0x18e:                      | Rest:
+0x18e: c0f20700000000000000 | 	iaddq $7, %rdx
+0x198: 76a201000000000000   | 	jg N1
+0x1a1: 90                   | 	ret
+                            | 
+0x1a2:                      | N1:
+0x1a2: 50870000000000000000 | 	mrmovq (%rdi), %r8
+0x1ac: 50970800000000000000 | 	mrmovq 0x8(%rdi), %r9
+0x1b6: 40860000000000000000 | 	rmmovq %r8, (%rsi)
+0x1c0: 6288                 | 	andq %r8, %r8
+0x1c2: 71d501000000000000   | 	jle N11
+0x1cb: c0f00100000000000000 | 	iaddq $1, %rax
+0x1d5:                      | N11:
+0x1d5: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x1df: 74e901000000000000   | 	jne N2 
+0x1e8: 90                   | 	ret
+                            | 
+0x1e9:                      | N2:
+0x1e9: 50871000000000000000 | 	mrmovq 0x10(%rdi), %r8
+0x1f3: 40960800000000000000 | 	rmmovq %r9, 0x8(%rsi)
+0x1fd: 6299                 | 	andq %r9, %r9
+0x1ff: 711202000000000000   | 	jle N22
+0x208: c0f00100000000000000 | 	iaddq $1, %rax
+0x212:                      | N22:
+0x212: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x21c: 742602000000000000   | 	jne N3
+0x225: 90                   | 	ret
+                            | 
+0x226:                      | N3:
+0x226: 50971800000000000000 | 	mrmovq 0x18(%rdi), %r9
+0x230: 40861000000000000000 | 	rmmovq %r8, 0x10(%rsi)
+0x23a: 6288                 | 	andq %r8, %r8
+0x23c: 714f02000000000000   | 	jle N33
+0x245: c0f00100000000000000 | 	iaddq $1, %rax
+0x24f:                      | N33:
+0x24f: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x259: 746302000000000000   | 	jne N4
+0x262: 90                   | 	ret
+                            | 
+0x263:                      | N4:
+0x263: 50872000000000000000 | 	mrmovq 0x20(%rdi), %r8
+0x26d: 40961800000000000000 | 	rmmovq %r9, 0x18(%rsi)
+0x277: 6299                 | 	andq %r9, %r9
+0x279: 718c02000000000000   | 	jle N44
+0x282: c0f00100000000000000 | 	iaddq $1, %rax
+0x28c:                      | N44:
+0x28c: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x296: 74a002000000000000   | 	jne N5
+0x29f: 90                   | 	ret
+                            | 
+0x2a0:                      | N5:
+0x2a0: 50972800000000000000 | 	mrmovq 0x28(%rdi), %r9
+0x2aa: 40862000000000000000 | 	rmmovq %r8, 0x20(%rsi)
+0x2b4: 6288                 | 	andq %r8, %r8
+0x2b6: 71c902000000000000   | 	jle N55
+0x2bf: c0f00100000000000000 | 	iaddq $1, %rax
+0x2c9:                      | N55:
+0x2c9: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x2d3: 74dd02000000000000   | 	jne N6
+0x2dc: 90                   | 	ret
+                            | 
+0x2dd:                      | N6:
+0x2dd: 50873000000000000000 | 	mrmovq 0x30(%rdi), %r8
+0x2e7: 40962800000000000000 | 	rmmovq %r9, 0x28(%rsi)
+0x2f1: 6299                 | 	andq %r9, %r9
+0x2f3: 710603000000000000   | 	jle N66
+0x2fc: c0f00100000000000000 | 	iaddq $1, %rax
+0x306:                      | N66:
+0x306: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x310: 741a03000000000000   | 	jne N7
+0x319: 90                   | 	ret
+                            | 
+0x31a:                      | N7:
+0x31a: 40863000000000000000 | 	rmmovq %r8, 0x30(%rsi)
+0x324: 6288                 | 	andq %r8, %r8
+0x326: 713903000000000000   | 	jle N77
+0x32f: c0f00100000000000000 | 	iaddq $1, %rax
+0x339:                      | N77:
+0x339: c0f2ffffffffffffffff | 	iaddq $-1, %rdx
+0x343: 90                   | 	ret
+                            | 
+                            | ##################################################################
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x344:                      | Done:
+0x344: 90                   | 	ret
+                            | ##################################################################
+                            | # Keep the following label at the end of your function
+0x345:                      | End:
+                            | #/* $end ncopy-ys */
