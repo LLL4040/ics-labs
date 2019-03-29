@@ -1,7 +1,7 @@
 /*
-    name: Liu Yalan
-    loginID: ics517030910228
-*/
+ *  name: Liu Yalan
+ *  loginID: ics517030910228
+ */
 #include "cachelab.h"
 #include <stdio.h>
 #include <string.h>
@@ -11,176 +11,208 @@
 #include <stdlib.h>
 #define MAGIC_LRU_NUM 999
 typedef struct{
-    int valid;       //有效位
-    int tag;          //标识位
-    int LruNumber;   //LRU算法需要位
+    int valid;       //valid bit
+    int tag;         //tag bit
+    int LruNumber;   //LRU bit
 } Line;
 
 typedef struct{
-    Line* lines;    //一组中所有的行
+    Line* lines;    //lines for one set
 } Set;
 
 typedef struct {
-    int set_num;    //组数
-    int line_num;   //行数
-    Set* sets;      //模拟cache
-} Sim_Cache;
+    int set_num;    //numbers of sets
+    int line_num;   //numbers of lines
+    Set* sets;      //sets for cache
+} Cache;
 
-void printHelpMenu();                                                                       //打印Help帮助文档
-void checkOptarg(char *curOptarg);                                                          //检查参数是否非法，初步检测是否是‘-’开头参数
-int get_Opt(int argc,char **argv,int *s,int *E,int *b,char *tracefileName,int *isVerbose);  //读取用户输入参数
-void init_SimCache(int s,int E,int b,Sim_Cache *cache);                                     //初始化模拟缓存
-int getSet(int addr,int s,int b);                                                           //得到组号
-int getTag(int addr,int s,int b);                                                           //得到标记
+int get_Opt(int argc,char **argv,int *s,int *E,int *b,char *tracefileName,int *isVerbose);
+void init_Cache(int s,int E,int b,Cache *cache);
+int getSet(int addr,int s,int b);
+int getTag(int addr,int s,int b);
 
-void loadData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
-void storeData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
-void modifyData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
+void loadData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
+void storeData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
+void modifyData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose);                                                          //得到标记号
 
 int misses;
 int hits;
 int evictions;
-int main(int argc,char **argv){
-    int s,E,b,isVerbose=0;
-    char tracefileName[100],opt[10];
+int main(int argc,char **argv)
+{
+    int s, E, b, isVerbose = 0;
+    char tracefileName[100], opt[10];
 
-    int addr,size;
-    misses = hits = evictions =0;
+    int addr, size;
+    misses = hits = evictions = 0;
 
-    Sim_Cache cache;
+    Cache cache;
 
-    get_Opt(argc,argv,&s,&E,&b,tracefileName,&isVerbose);
-    init_SimCache(s,E,b,&cache);
-    FILE *tracefile = fopen(tracefileName,"r");
+    get_Opt(argc, argv, &s, &E, &b, tracefileName, &isVerbose);
+    init_Cache(s, E, b, &cache);
+    FILE *tracefile = fopen(tracefileName, "r");
 
-    while(fscanf(tracefile,"%s %x,%d",opt,&addr,&size) != EOF){
-        if(strcmp(opt,"I")==0)continue;
-        int setBits = getSet(addr,s,b);
-        int tagBits = getTag(addr,s,b);
-//        printf("----------------------------------\n");
-//        printf("setBits:%x  tagBits:%x\n",setBits,tagBits);
-        if(isVerbose == 1) printf("%s %x,%d ",opt,addr,size);
-        if(strcmp(opt,"S")==0) {
-            storeData(&cache,addr,size,setBits,tagBits,isVerbose);
+    while(fscanf(tracefile, "%s %x,%d", opt, &addr, &size) != EOF)
+    {
+        if(strcmp(opt,"I") == 0) continue;
+        int setBits = getSet(addr, s, b);
+        int tagBits = getTag(addr, s, b);
+
+        if(isVerbose == 1) printf("%s %x,%d ", opt, addr, size);
+        if(strcmp(opt,"S") == 0) 
+        {
+            storeData(&cache, addr, size, setBits, tagBits, isVerbose);
         }
-        if(strcmp(opt,"M")==0) {
-            modifyData(&cache,addr,size,setBits,tagBits,isVerbose);
+        if(strcmp(opt,"M") == 0) 
+        {
+            modifyData(&cache, addr, size, setBits, tagBits, isVerbose);
         }
-        if(strcmp(opt,"L")==0) {
-            loadData(&cache,addr,size,setBits,tagBits,isVerbose);
+        if(strcmp(opt,"L") == 0) 
+        {
+            loadData(&cache, addr, size, setBits, tagBits, isVerbose);
         }
         if(isVerbose == 1) printf("\n");
     }
-    printSummary(hits,misses,evictions);
+    printSummary(hits, misses, evictions);
     return 0;
 }
 
-/*获取地址中的组号*/
-int getSet(int addr,int s,int b){
+/*get set number*/
+int getSet(int addr,int s,int b)
+{
     addr = addr >> b;
-    int mask =  (1<<s)-1;
-    return addr &mask;
+    int mask = (1 << s) - 1;
+    return addr & mask;
 }
 
-/*获取地址中的标识号*/
-int getTag(int addr,int s,int b){
-    int mask = s+b;
+/*get tag*/
+int getTag(int addr,int s,int b)
+{
+    int mask = s + b;
     return addr >> mask;
 }
 
-/*查找某组中当前最小的LruNumber行，作为牺牲行 */
-int findMinLruNumber(Sim_Cache *sim_cache,int setBits){
+/*search the minium LruNumber line*/
+int findMinLruNumber(Cache *cache,int setBits)
+{
     int i;
-    int minIndex=0;
+    int minIndex = 0;
     int minLru = MAGIC_LRU_NUM;
-    for(i=0;i<sim_cache->line_num;i++){
-        if(sim_cache->sets[setBits].lines[i].LruNumber < minLru){
+    for(i = 0; i < cache->line_num; i++)
+    {
+        if(cache->sets[setBits].lines[i].LruNumber < minLru)
+        {
             minIndex = i;
-            minLru = sim_cache->sets[setBits].lines[i].LruNumber;
+            minLru = cache->sets[setBits].lines[i].LruNumber;
         }
     }
     return minIndex;
 }
 
-/*更新Lru，hit的为最大的MAGIC_LRU_NUM,其他LRU均减一*/
-void updateLruNumber(Sim_Cache *sim_cache,int setBits,int hitIndex){
-        sim_cache->sets[setBits].lines[hitIndex].LruNumber = MAGIC_LRU_NUM;
+/*update LRU*/
+void updateLruNumber(Cache *cache,int setBits,int hitIndex)
+{
+        cache->sets[setBits].lines[hitIndex].LruNumber = MAGIC_LRU_NUM;
         int j;
-        for(j=0;j<sim_cache->line_num;j++){//更新其他行的LruNumber
-            if(j!=hitIndex) sim_cache->sets[setBits].lines[j].LruNumber--;
+        for(j=0;j<cache->line_num;j++)
+        {   //update other line's LRU
+            if(j!=hitIndex) 
+            {
+                cache->sets[setBits].lines[j].LruNumber--;
+            }
         }
 }
 
-/*判断是否命中*/
-int isMiss(Sim_Cache *sim_cache,int setBits,int tagBits){
+/*miss or hit*/
+int isMiss(Cache *cache,int setBits,int tagBits)
+{
     int i;
     int isMiss = 1;
-    for(i=0;i<sim_cache->line_num;i++){
-        if(sim_cache->sets[setBits].lines[i].valid == 1 && sim_cache->sets[setBits].lines[i].tag == tagBits){
+    for(i=0;i<cache->line_num;i++)
+    {
+        if(cache->sets[setBits].lines[i].valid == 1 && cache->sets[setBits].lines[i].tag == tagBits)
+        {
             isMiss = 0;
-            updateLruNumber(sim_cache,setBits,i);
+            updateLruNumber(cache,setBits,i);
         }
     }
     return isMiss;
 }
 
-/*更新内存数据*/
-int updateCache(Sim_Cache *sim_cache,int setBits,int tagBits){
+/*update cache data*/
+int updateCache(Cache *cache,int setBits,int tagBits)
+{
     int i;
     int isfull = 1;
-    for(i=0;i<sim_cache->line_num;i++){
-        if(sim_cache->sets[setBits].lines[i].valid == 0){
-            isfull = 0; //该组未满
+    for(i=0;i<cache->line_num;i++)
+    {
+        if(cache->sets[setBits].lines[i].valid == 0)
+        {
+            isfull = 0; //set is not full
             break;
         }
     }
-    if(isfull == 0){
-        sim_cache->sets[setBits].lines[i].valid = 1;
-        sim_cache->sets[setBits].lines[i].tag = tagBits;
-        updateLruNumber(sim_cache,setBits,i);
-    }else{
-        //组已经满，需要牺牲行
-        int evictionIndex = findMinLruNumber(sim_cache,setBits);
-        sim_cache->sets[setBits].lines[evictionIndex].valid = 1;
-        sim_cache->sets[setBits].lines[evictionIndex].tag = tagBits;
-        updateLruNumber(sim_cache,setBits,evictionIndex);
+    if(isfull == 0)
+    {
+        cache->sets[setBits].lines[i].valid = 1;
+        cache->sets[setBits].lines[i].tag = tagBits;
+        updateLruNumber(cache,setBits,i);
+    }else
+    {
+        //set is full
+        int evictionIndex = findMinLruNumber(cache,setBits);
+        cache->sets[setBits].lines[evictionIndex].valid = 1;
+        cache->sets[setBits].lines[evictionIndex].tag = tagBits;
+        updateLruNumber(cache,setBits,evictionIndex);
     }
     return isfull;
 }
 
-void loadData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose){
+void loadData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose)
+{
 
-    if(isMiss(sim_cache,setBits,tagBits)==1){ //没有命中
+    if(isMiss(cache,setBits,tagBits)==1)
+    {   //not hit
         misses++;
         if(isVerbose == 1) printf("miss ");
-        if(updateCache(sim_cache,setBits,tagBits) == 1){//该组已满，需要牺牲行
+        if(updateCache(cache,setBits,tagBits) == 1)
+        {   //set is full
             evictions++;
             if(isVerbose==1) printf("eviction ");
         }
-    }else{ //命中
-       hits++;
-       if(isVerbose == 1) printf("hit ");
+    }else
+    {   //hit
+        hits++;
+        if(isVerbose == 1) 
+        {
+            printf("hit ");
+        }    
     }
 }
 
-void storeData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose){
-    loadData(sim_cache,addr,size,setBits,tagBits,isVerbose);
+void storeData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose)
+{
+    loadData(cache, addr, size, setBits, tagBits, isVerbose);
 }
 
-void modifyData(Sim_Cache *sim_cache,int addr,int size,int setBits,int tagBits ,int isVerbose){
-    loadData(sim_cache,addr,size,setBits,tagBits,isVerbose);
-    storeData(sim_cache,addr,size,setBits,tagBits,isVerbose);
+void modifyData(Cache *cache,int addr,int size,int setBits,int tagBits ,int isVerbose)
+{
+    loadData(cache, addr, size, setBits, tagBits, isVerbose);
+    storeData(cache, addr, size, setBits, tagBits, isVerbose);
 }
-/*初始化模拟内存*/
-void init_SimCache(int s,int E,int b,Sim_Cache *cache){
-    if(s < 0){
+/*init cache*/
+void init_Cache(int s,int E,int b,Cache *cache)
+{
+    if(s < 0)
+    {
         printf("invaild cache sets number\n!");
         exit(0);
     }
-    cache->set_num = 2 << s; //2^s 组
+    cache->set_num = 2 << s;
     cache->line_num = E;
     cache->sets = (Set *)malloc(cache->set_num * sizeof(Set));
-    if(!cache->sets){
+    if(!cache->sets)
+    {
         printf("Set Memory error\n");
         exit(0);
     }
@@ -188,19 +220,22 @@ void init_SimCache(int s,int E,int b,Sim_Cache *cache){
     for(i=0; i< cache->set_num; i++)
     {
         cache->sets[i].lines = (Line *)malloc(E*sizeof(Line));
-        if(!cache->sets){
+        if(!cache->sets)
+        {
             printf("Line Memory error\n");
             exit(0);
         }
-        for(j=0; j < E; j++){
+        for(j=0; j < E; j++)
+        {
             cache->sets[i].lines[j].valid = 0;
             cache->sets[i].lines[j].LruNumber = 0;
         }
     }
     return ;
 }
-/*分析输入参数*/
-int get_Opt(int argc,char **argv,int *s,int *E,int *b,char *tracefileName,int *isVerbose){
+
+int get_Opt(int argc,char **argv,int *s,int *E,int *b,char *tracefileName,int *isVerbose)
+{
     int c;
     while((c = getopt(argc,argv,"hvs:E:b:t:"))!=-1)
     {
@@ -210,48 +245,21 @@ int get_Opt(int argc,char **argv,int *s,int *E,int *b,char *tracefileName,int *i
             *isVerbose = 1;
             break;
         case 's':
-            checkOptarg(optarg);
             *s = atoi(optarg);
             break;
         case 'E':
-            checkOptarg(optarg);
             *E = atoi(optarg);
             break;
         case 'b':
-            checkOptarg(optarg);
             *b = atoi(optarg);
             break;
         case 't':
-            checkOptarg(optarg);
             strcpy(tracefileName,optarg);
             break;
         case 'h':
         default:
-            printHelpMenu();
             exit(0);
         }
     }
     return 1;
-}
-/*打印帮助文档*/
-void printHelpMenu(){
-    printf("Usage: ./csim-ref [-hv] -s <num> -E <num> -b <num> -t <file>\n");
-    printf("Options:\n");
-    printf("-h         Print this help message.\n");
-    printf("-v         Optional verbose flag.\n");
-    printf("-s <num>   Number of set index bits.\n");
-    printf("-E <num>   Number of lines per set.\n");
-    printf("-b <num>   Number of block offset bits.\n");
-    printf("-t <file>  Trace file.\n\n\n");
-    printf("Examples:\n");
-    printf("linux>  ./csim -s 4 -E 1 -b 4 -t traces/yi.trace\n");
-    printf("linux>  ./csim -v -s 8 -E 2 -b 4 -t traces/yi.trace\n");
-}
-/*检查参数合法性*/
-void checkOptarg(char *curOptarg){
-    if(curOptarg[0]=='-'){
-        printf("./csim :Missing required command line argument\n");
-        printHelpMenu();
-        exit(0);
-    }
 }
